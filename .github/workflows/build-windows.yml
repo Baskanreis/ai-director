@@ -27,6 +27,12 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Fetch ffmpeg + ffprobe binaries (to embed in the exe)
+        shell: pwsh
+        run: |
+          pip install static-ffmpeg
+          python -c "from static_ffmpeg import run; import shutil, pathlib; ffmpeg, ffprobe = run.get_or_fetch_platform_executables_else_raise(); dest = pathlib.Path('tools/ffmpeg'); dest.mkdir(parents=True, exist_ok=True); shutil.copy(ffmpeg, dest / 'ffmpeg.exe'); shutil.copy(ffprobe, dest / 'ffprobe.exe'); print('ffmpeg ->', ffmpeg); print('ffprobe ->', ffprobe)"
+
       - name: Merge app1 + app2 + app3 into app/
         run: python merge_app.py
 
