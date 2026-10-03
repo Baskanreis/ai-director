@@ -1,0 +1,14 @@
+# Sonraki sürümlerde gerekecek (v0.8 için zorunlu DEĞİL, opsiyonel)
+opencv-python>=4.8      # Smart Reframe; ayrıca ffprobe yoksa video bilgisi için yedek
+openai-whisper          # AI Subtitle (v0.8) — kurulu değilse SubtitleDialog açık bir hata gösterir
+# FFmpeg pip ile değil, işletim sistemine kurulur (bkz. README).
+# v0.3'ten itibaren export için FFmPEG ZORUNLUDUR.
+# v0.6 export motoru H.265/AV1 için FFmpeg'in libx265/libsvtav1 (veya libaom-av1)
+# ile derlenmiş olmasını gerektirir; yoksa export diyaloğunda yalnızca H.264 sunulur.
+# v0.7 Audio Engine (waveform, normalizasyon, ducking) ffmpeg + numpy ile calisir;
+# numpy zaten cekirdek bagimliliktir (requirements.txt), ek kurulum gerekmez.
+# v2.31 optional accelerated inference. Install only for model-backed AI:
+# onnxruntime>=1.18              # portable CPU inference
+# onnxruntime-gpu>=1.18          # CUDA execution provider
+# onnxruntime-directml>=1.18     # Windows DirectML GPU fallback
+# tensorrt                       # NVIDIA TensorRT provider (platform-specific)
