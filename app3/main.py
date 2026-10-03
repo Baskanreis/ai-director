@@ -12,6 +12,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# PyInstaller ile paketlenmis .exe icinde calisiyorsa (frozen), build sirasinda
+# gomulen ffmpeg.exe / ffprobe.exe ikililerinin bulundugu klasoru PATH'in basina
+# ekle. Boylece kullanicinin ayrica FFmpeg kurmasina gerek kalmaz: app/video/
+# media_info.py icindeki shutil.which("ffprobe") bu gomulu ikiliyi bulur.
+if getattr(sys, "frozen", False):
+    import os
+
+    _bundled_dir = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+    os.environ["PATH"] = str(_bundled_dir) + os.pathsep + os.environ.get("PATH", "")
+
 
 def main() -> int:
     from app import __version__
