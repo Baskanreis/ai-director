@@ -16,6 +16,18 @@ datas = [
 # Only include data dirs that actually exist and are non-empty
 datas = [(src, dst) for src, dst in datas if Path(src).exists()]
 
+# "Fetch ffmpeg binaries" is adimi tools/ffmpeg/ altina ffmpeg.exe ve ffprobe.exe
+# indirir (bkz. .github/workflows/build-windows.yml). Varsa, bunlari dogrudan
+# exe'nin yanina (_internal/ kokune) gom: boylece kullanicinin FFmpeg kurmasina
+# gerek kalmaz. Yerel bir derlemede bu klasor yoksa build yine de calisir, sadece
+# ffmpeg gomulmez (eski davranis: OpenCV yedegi + kullanicinin sistem FFmpeg'i).
+binaries = []
+_ffmpeg_bin_dir = ROOT / "tools" / "ffmpeg"
+for _exe_name in ("ffmpeg.exe", "ffprobe.exe"):
+    _p = _ffmpeg_bin_dir / _exe_name
+    if _p.exists():
+        binaries.append((str(_p), "."))
+
 hiddenimports = [
     "PySide6.QtMultimedia",
     "PySide6.QtMultimediaWidgets",
@@ -26,7 +38,7 @@ hiddenimports = [
 a = Analysis(
     ["app/main.py"],
     pathex=[str(ROOT)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
