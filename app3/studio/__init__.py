@@ -1,0 +1,1 @@
+"""Studio calisma alani (planlanan)."""
