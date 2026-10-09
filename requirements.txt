@@ -1,0 +1,17 @@
+# AI Director v1.0 (Ilk Beta) - cekirdek bagimliliklar
+PySide6>=6.6            # QtMultimedia/QtMultimediaWidgets dahil (video onizleme, v0.5)
+numpy>=1.24
+
+imageio-ffmpeg>=0.5.1
+
+# Smart Reframe: lightweight face detection used by the Shorts AI render pipeline.
+opencv-python-headless>=4.9
+
+# Bundled local AI speech provider. Setup preloads the default model into Program Files.
+openai-whisper>=20250625
+
+# Authorized YouTube Analytics OAuth (bundled into the single Windows Setup).
+google-api-python-client>=2.150.0
+google-auth>=2.35.0
+google-auth-oauthlib>=1.2.1
+google-auth-httplib2>=0.2.0

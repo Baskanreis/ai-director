@@ -1,0 +1,13 @@
+# Sonraki sürümlerde gerekecek (v0.8 için zorunlu DEĞİL, opsiyonel)
+openai-whisper          # AI Subtitle (v0.8) — kurulu değilse SubtitleDialog açık bir hata gösterir
+# FFmpeg pip ile değil, işletim sistemine kurulur (bkz. README).
+# v0.3'ten itibaren export için FFmPEG ZORUNLUDUR.
+# v0.6 export motoru H.265/AV1 için FFmpeg'in libx265/libsvtav1 (veya libaom-av1)
+# ile derlenmiş olmasını gerektirir; yoksa export diyaloğunda yalnızca H.264 sunulur.
+# v0.7 Audio Engine (waveform, normalizasyon, ducking) ffmpeg + numpy ile calisir;
+# numpy zaten cekirdek bagimliliktir (requirements.txt), ek kurulum gerekmez.
+
+# OpenCV is provided by requirements.txt as opencv-python-headless; do not install a second cv2 distribution.
+
+# Optional system telemetry for the Performance Monitor panel.
+psutil>=6.0
