@@ -1,0 +1,102 @@
+name: CI
+
+# NEDEN BU "ASSEMBLE" ADIMI VAR:
+# GitHub web yukleme araci tek seferde ~100 dosya siniri koydugu icin app/ klasorunun
+# alt klasorleri (ui, effects, proxy, youtube, vb.) repo KOKUNE dogrudan yuklendi
+# (app/ onekini kaybederek), ve app/tests/ 105 dosya oldugu icin iki parcaya
+# bolunup part_1/ ve part_2/ olarak yuklendi. Bu adim, test/derleme calismadan
+# ONCE, bu dagınık yapiyi gercek "app/..." paket yapisina geri toplar.
+# Klasorler zaten dogru yerdeyse (ileride duzgun 'git push' ile duzeltilirse) bu
+# adim hicbir sey yapmaz ve sessizce gecer (idempotent).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Assemble app/ + Compile + Import Audit + Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Reassemble app/ package layout from flat root uploads
+        shell: bash
+        run: |
+          set -e
+          mkdir -p app
+
+          # 1) Repo kokune dogrudan yuklenmis app alt klasorlerini app/ altina tasi.
+          SUBFOLDERS="agents ai audio brain effects export motion performance plugins preview pro project proxy reference render runtime scene shorts subtitle timeline ui video youtube"
+          for d in $SUBFOLDERS; do
+            if [ -d "$d" ] && [ ! -d "app/$d" ]; then
+              echo "Tasiniyor: $d -> app/$d"
+              mv "$d" "app/$d"
+            fi
+          done
+
+          # 2) Bolunmus test klasorlerini (part_1 / part_2) app/tests/ altinda birlestir.
+          mkdir -p app/tests
+          for loc in "part_1" "part_2" "app/tests/part_1" "app/tests/part_2"; do
+            if [ -d "$loc" ]; then
+              echo "Birlestiriliyor: $loc -> app/tests/"
+              cp -n "$loc"/*.py app/tests/ 2>/dev/null || true
+              rm -rf "$loc"
+            fi
+          done
+
+          # 3) app paket dosyalari (bilinen, sabit icerik) eksikse olustur.
+          if [ ! -f app/__init__.py ]; then
+            echo '__version__ = "2.101.7"' > app/__init__.py
+            echo "UYARI: app/__init__.py bulunamadi, otomatik olusturuldu."
+          fi
+          if [ ! -f app/tests/__init__.py ]; then
+            printf '"""Test paketi."""\n' > app/tests/__init__.py
+          fi
+
+          # 4) Tanilama: hangi klasorler hala eksik, acikca goster.
+          echo "--- app/ icerigi ---"
+          ls app
+          MISSING=""
+          for d in $SUBFOLDERS tests; do
+            [ -d "app/$d" ] || MISSING="$MISSING $d"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::warning::Hala eksik app alt klasorleri:$MISSING"
+          fi
+          if [ ! -f app/main.py ]; then
+            echo "::notice::app/main.py henuz yuklenmemis. Testler buna ihtiyac duymuyor, ama uygulamanin calismasi/PyInstaller build'i icin gerekli olacak."
+          fi
+
+          # 5) assets/ klasoru app/ ile KARDES'tir (app/ icine degil, repo kokune
+          # yuklenmeli). Icindeki gercek .wav dosyalari olmadan 6 test gercekten
+          # kirmizi cikar (bu bir CI hatasi degil, dogrulanmis gercek bir eksikliktir).
+          if [ ! -d "assets" ] || [ -z "$(find assets -name '*.wav' -print -quit)" ]; then
+            echo "::error::assets/ klasoru (repo kokunde, app/ ile ayni seviyede, 70 .wav dosyasi) eksik veya bos. app/effects/asset_library.py'ye bagli 6 test bu yuzden kirmizi cikacak."
+          fi
+
+      - name: Install lean dependencies (no PySide6 / whisper / google-api)
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy imageio-ffmpeg opencv-python-headless pytest
+
+      - name: Python syntax check (compileall)
+        run: python -m compileall -q app
+
+      - name: API import/contract audit
+        run: python installer/api_contract_audit.py
+
+      - name: Run full test suite
+        run: python -m pytest app/tests -q
