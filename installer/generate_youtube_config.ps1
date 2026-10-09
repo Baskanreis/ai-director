@@ -13,4 +13,5 @@ $content = @"
 YOUTUBE_API_KEY = $(PyQuote $key)
 OAUTH_CLIENT_JSON = $(PyQuote $json)
 "@
-Set-Content -Path $path -Value $content -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($path, $content, $utf8NoBom)
