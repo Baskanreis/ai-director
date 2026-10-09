@@ -1,5 +1,5 @@
-$ErrorActionPreference = 'Stop'
 param([string]$StageDir)
+$ErrorActionPreference = 'Stop'
 
 if (-not $StageDir) { throw 'StageDir belirtilmedi.' }
 $StageDir = (Resolve-Path $StageDir).Path
