@@ -44,8 +44,8 @@ Download-File $qwenUrl $qwenFile
 
 $headers = @{ 'User-Agent' = 'AI-Director-Build' }
 $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest' -Headers $headers
-$asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*cpu.*\.zip$' } | Select-Object -First 1
-if (-not $asset) { $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*\.zip$' -and $_.name -notmatch 'cuda' } | Select-Object -First 1 }
+$asset = $release.assets | Where-Object { $_.name -match 'win.*cpu.*x64.*\.zip$' } | Select-Object -First 1
+if (-not $asset) { $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*\.zip$' -and $_.name -notmatch 'cuda|vulkan|hip|sycl|rocm|openvino|opencl' } | Select-Object -First 1 }
 if (-not $asset) { throw 'Windows x64 llama.cpp CPU paketi bulunamadı.' }
 $zip = Join-Path $env:TEMP ('ai_director_' + $asset.name)
 Download-File $asset.browser_download_url $zip
