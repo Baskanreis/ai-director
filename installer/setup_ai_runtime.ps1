@@ -38,6 +38,19 @@ try {
 try {
     $headers = @{ 'User-Agent' = 'AI-Director-Setup' }
     $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest' -Headers $headers
+    if (-not $release.assets -or $release.assets.Count -eq 0) {
+        # 'latest' can be a semver release (v0.x.y) with no binary assets; it names the
+        # nightly build that actually carries the Windows zips in its body text.
+        $nightlyTag = $null
+        if ($release.body -match 'Nightly build:\s*(b\d+)') { $nightlyTag = $Matches[1] }
+        if ($nightlyTag) {
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases/tags/$nightlyTag" -Headers $headers
+        } else {
+            $allReleases = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=20' -Headers $headers
+            $release = $allReleases | Where-Object { $_.tag_name -match '^b\d+$' } | Sort-Object { [int]($_.tag_name -replace 'b','') } -Descending | Select-Object -First 1
+        }
+    }
+    if (-not $release) { throw 'llama.cpp nightly release bulunamadı.' }
     $hasNvidia = $false
     try { & nvidia-smi.exe -L *> $null; $hasNvidia = ($LASTEXITCODE -eq 0) } catch { $hasNvidia = $false }
     if ($hasNvidia) {
