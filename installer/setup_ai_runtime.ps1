@@ -41,12 +41,12 @@ try {
     $hasNvidia = $false
     try { & nvidia-smi.exe -L *> $null; $hasNvidia = ($LASTEXITCODE -eq 0) } catch { $hasNvidia = $false }
     if ($hasNvidia) {
-        $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*cuda.*\.zip$' } | Select-Object -First 1
+        $asset = $release.assets | Where-Object { $_.name -match 'win.*cuda.*x64.*\.zip$' } | Select-Object -First 1
     } else {
-        $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*cpu.*\.zip$' } | Select-Object -First 1
+        $asset = $release.assets | Where-Object { $_.name -match 'win.*cpu.*x64.*\.zip$' } | Select-Object -First 1
     }
     if (-not $asset) {
-        $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*\.zip$' } | Select-Object -First 1
+        $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*\.zip$' -and $_.name -notmatch 'cuda|vulkan|hip|sycl|rocm|openvino|opencl' } | Select-Object -First 1
     }
     if (-not $asset) { throw 'Uygun Windows llama.cpp paketi bulunamadı.' }
     $zip = Join-Path $env:TEMP $asset.name
