@@ -80,6 +80,7 @@ if not exist "dist\installer\AI_Director_Setup.exe" (
 )
 
 rem Distribution contract: GitHub'a/son kullaniciya portable klasor degil, sadece Setup.exe verilir.
+if exist "dist\AI_Director.exe" del /q "dist\AI_Director.exe"
 if exist "dist\AI_Director" rmdir /s /q "dist\AI_Director"
 if exist "dist\AI_Director_Setup.exe" del /q "dist\AI_Director_Setup.exe"
 move /Y "dist\installer\AI_Director_Setup.exe" "dist\AI_Director_Setup.exe" >nul
