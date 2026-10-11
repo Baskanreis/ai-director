@@ -67,7 +67,7 @@ if errorlevel 1 goto :fail
 echo [8/8] Sadece Setup.exe paketleniyor...
 where ISCC >nul 2>nul
 if errorlevel 1 (
-  echo [HATA] Inno Setup Compiler (ISCC.exe) bulunamadi.
+  echo [HATA] Inno Setup Compiler ISCC.exe bulunamadi.
   echo GitHub Actions runner'inda Inno Setup kurulu olmalidir.
   goto :fail
 )
