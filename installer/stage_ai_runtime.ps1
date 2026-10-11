@@ -42,20 +42,32 @@ $qwenUrl = 'https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1
 $qwenFile = Join-Path $ModelDir 'Qwen3-1.7B-Q4_K_M.gguf'
 Download-File $qwenUrl $qwenFile
 
+function Resolve-LlamaCppRelease($LatestRelease, $Headers) {
+    # Already a real binary-carrying release (a nightly bNNNN tag normally has .zip assets)?
+    if ($LatestRelease.assets | Where-Object { $_.name -match '\.zip$' }) { return $LatestRelease }
+
+    # 'latest' is a semver release (v0.x.y) with no (or non-zip) binary assets; it points at
+    # the nightly build that actually carries the Windows zips, via one of:
+    #   1) a 'nightly-tag.txt' asset containing the tag
+    #   2) a 'Nightly build: bNNNN' line in the release body
+    $nightlyTag = $null
+    $tagAsset = $LatestRelease.assets | Where-Object { $_.name -eq 'nightly-tag.txt' } | Select-Object -First 1
+    if ($tagAsset) {
+        try { $nightlyTag = (Invoke-WebRequest -Uri $tagAsset.browser_download_url -UseBasicParsing).Content.Trim() } catch { $nightlyTag = $null }
+    }
+    if (-not $nightlyTag -and $LatestRelease.body -match 'Nightly build:\s*`?(b\d+)') { $nightlyTag = $Matches[1] }
+    if ($nightlyTag) {
+        try { return Invoke-RestMethod -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases/tags/$nightlyTag" -Headers $Headers } catch { }
+    }
+
+    # Last resort: scan the releases list for the newest bNNNN nightly tag.
+    $allReleases = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=20' -Headers $Headers
+    return $allReleases | Where-Object { $_.tag_name -match '^b\d+$' } | Sort-Object { [int]($_.tag_name -replace 'b','') } -Descending | Select-Object -First 1
+}
+
 $headers = @{ 'User-Agent' = 'AI-Director-Build' }
 $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases/latest' -Headers $headers
-if (-not $release.assets -or $release.assets.Count -eq 0) {
-    # 'latest' can be a semver release (v0.x.y) with no binary assets; it names the
-    # nightly build that actually carries the Windows zips in its body text.
-    $nightlyTag = $null
-    if ($release.body -match 'Nightly build:\s*(b\d+)') { $nightlyTag = $Matches[1] }
-    if ($nightlyTag) {
-        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases/tags/$nightlyTag" -Headers $headers
-    } else {
-        $allReleases = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=20' -Headers $headers
-        $release = $allReleases | Where-Object { $_.tag_name -match '^b\d+$' } | Sort-Object { [int]($_.tag_name -replace 'b','') } -Descending | Select-Object -First 1
-    }
-}
+$release = Resolve-LlamaCppRelease $release $headers
 if (-not $release) { throw 'llama.cpp nightly release bulunamadı.' }
 $asset = $release.assets | Where-Object { $_.name -match 'win.*cpu.*x64.*\.zip$' } | Select-Object -First 1
 if (-not $asset) { $asset = $release.assets | Where-Object { $_.name -match 'win.*x64.*\.zip$' -and $_.name -notmatch 'cuda|vulkan|hip|sycl|rocm|openvino|opencl' } | Select-Object -First 1 }
